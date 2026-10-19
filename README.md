@@ -4,6 +4,8 @@
 
 Программа редактирует только личные паки. Базовые и дополнительные паки сайта в неё не входят.
 
+[Скачать](https://github.com/Stiv455/Bunker-Online-Packs-Editor/releases/download/v1.4/Bunker.Packs.Editor.Setup.1.4.0.exe)
+
 ## Как развернуть у себя
 
 Нужны Windows и [Node.js](https://nodejs.org/) 20 или новее. Вместе с Node ставится npm.
