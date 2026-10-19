@@ -56,7 +56,7 @@ npm run build:win
 | `Bunker Packs Editor 1.4.0.exe` | Портативная версия, без установки |
 | `win-unpacked\` | Распакованное приложение, его можно запустить сразу |
 
-Ярлык называется **Bunker Packs Editor**.
+Программа называется **Bunker Packs Editor**.
 
 ## О программе
 
