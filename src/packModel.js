@@ -12,28 +12,43 @@ export const SECTION_INFO = {
 };
 
 export const SECTIONS = [
-  { key: "catastrophe", title: "Катаклизм", kind: "catastrophe" },
-  { key: "bunkerSize", title: "Размер бункера", kind: "text" },
-  { key: "bunkerTimeSpent", title: "Время нахождения", kind: "text" },
-  { key: "bunkerFoodAmount", title: "Еда и вода", kind: "text" },
-  { key: "bunkerPresence", title: "В бункере присутствуют", kind: "text" },
-  { key: "bunkerLocation", title: "Локация бункера", kind: "text" },
-  { key: "bunkerCreated", title: "Как и где построен", kind: "text" },
-  { key: "bunkerBedroom", title: "Описание комнат", kind: "text" },
-  { key: "sex", title: "Пол", kind: "sex" },
-  { key: "body", title: "Телосложение", kind: "body" },
-  { key: "trait", title: "Человеческая черта", kind: "text" },
-  { key: "profession", title: "Профессия", kind: "stage" },
-  { key: "health", title: "Здоровье", kind: "health" },
-  { key: "hobbies", title: "Хобби", kind: "stage" },
-  { key: "phobia", title: "Фобия", kind: "text" },
-  { key: "inventory", title: "Крупный инвентарь", kind: "text" },
-  { key: "backpack", title: "Рюкзак", kind: "text" },
-  { key: "addInfo", title: "Доп. сведение", kind: "text" },
-  { key: "spec", title: "Спецвозможность", kind: "spec" },
+  { key: "catastrophe", title: "Катаклизм", fileTitle: "Катаклизм", kind: "catastrophe" },
+  { key: "bunkerSize", title: "Размер бункера", fileTitle: "Размер бункера", kind: "text" },
+  { key: "bunkerTimeSpent", title: "Время нахождения", fileTitle: "Время нахождения", kind: "text" },
+  { key: "bunkerFoodAmount", title: "Еда и вода", fileTitle: "Количество еды и воды", kind: "text" },
+  { key: "bunkerPresence", title: "В бункере присутствуют", fileTitle: "В бункере присутствуют", kind: "text" },
+  { key: "bunkerLocation", title: "Локация бункера", fileTitle: "Локация бункера", kind: "text" },
+  { key: "bunkerCreated", title: "Как и где построен", fileTitle: "Как и где был построен (есть ли проблемы)", kind: "text" },
+  { key: "bunkerBedroom", title: "Описание комнат", fileTitle: "Описание комнат", kind: "text" },
+  { key: "sex", title: "Пол", fileTitle: "Пол", kind: "sex" },
+  { key: "body", title: "Телосложение", fileTitle: "Телосложение", kind: "body" },
+  { key: "trait", title: "Человеческая черта", fileTitle: "Человеческая черта", kind: "text" },
+  { key: "profession", title: "Профессия", fileTitle: "Профессия", kind: "stage" },
+  { key: "health", title: "Здоровье", fileTitle: "Здоровье", kind: "health" },
+  { key: "hobbies", title: "Хобби", fileTitle: "Хобби/Увлечение", kind: "stage" },
+  { key: "phobia", title: "Фобия", fileTitle: "Фобия/Страх", kind: "text" },
+  { key: "inventory", title: "Крупный инвентарь", fileTitle: "Крупный инвентарь", kind: "text" },
+  { key: "backpack", title: "Рюкзак", fileTitle: "Рюкзак", kind: "text" },
+  { key: "addInfo", title: "Доп. сведение", fileTitle: "Дополнительное сведение", kind: "text" },
+  { key: "spec", title: "Спецвозможность", fileTitle: "Специальная возможность", kind: "spec" },
 ];
 
 const STAGE_KEYS = new Set(["profession", "health", "hobbies"]);
+const FILE_TYPE_KEYS = new Set([
+  "catastrophe",
+  "bunkerSize",
+  "bunkerTimeSpent",
+  "bunkerFoodAmount",
+  "bunkerPresence",
+  "bunkerLocation",
+  "bunkerCreated",
+  "bunkerBedroom",
+  "sex",
+  "body",
+  "profession",
+  "health",
+  "hobbies",
+]);
 
 export function titleLimit(key) {
   if (key === "catastrophe") return 1400;
@@ -105,6 +120,11 @@ export function packFromServer(raw) {
       base.height1 = str(sec.height1);
       base.height2 = str(sec.height2);
     }
+    if (STAGE_KEYS.has(s.key) && base.type === "base" && base.data.some((c) => String(c.stage || "").trim())) {
+      base.type = "universal";
+    }
+    if (s.key === "sex" && base.type === "base" && base.data.some((c) => c.age1 || c.age2)) base.type = "universal";
+    if (s.key === "body" && base.type === "base" && base.data.some((c) => c.height1 || c.height2)) base.type = "universal";
     pack.sections[s.key] = base;
   }
   return pack;
@@ -168,6 +188,75 @@ export function buildPayload(pack) {
     body[s.key] = out;
   }
   if (pack.packID != null && Number(pack.packID) !== -1) body.packID = Number(pack.packID);
+  return body;
+}
+
+function fileId(id) {
+  const n = Number(id);
+  return Number.isFinite(n) ? n : -1;
+}
+
+function fileCard(key, card) {
+  const out = { title: String(card.title || "").trim(), id: fileId(card.id) };
+  if (key === "profession" && String(card.description || "").trim()) out.description = String(card.description).trim();
+  if (key === "catastrophe") {
+    const t = num(card.timer);
+    out.timer = t || null;
+  }
+  if (STAGE_KEYS.has(key) && String(card.stage || "").trim()) out.stage = String(card.stage).trim();
+  if (key === "sex") {
+    const a = num(card.age1);
+    const b = num(card.age2);
+    if (a) out.age1 = a;
+    if (b) out.age2 = b;
+  }
+  if (key === "body") {
+    const a = num(card.height1);
+    const b = num(card.height2);
+    if (a) out.height1 = a;
+    if (b) out.height2 = b;
+  }
+  return out;
+}
+
+/** Файл для импорта на сайте: только разделы с data, title и itemIndex. */
+export function buildFile(pack) {
+  const body = {};
+  SECTIONS.forEach((s, index) => {
+    const sec = pack.sections[s.key] || blankSection(s.key);
+    const type = sec.type || "base";
+    const out = {
+      data: (sec.data || []).map((c) => fileCard(s.key, c)),
+      itemIndex: SECTIONS.length - index,
+      title: s.fileTitle || s.title,
+    };
+    if (FILE_TYPE_KEYS.has(s.key)) out.type = type;
+    if (STAGE_KEYS.has(s.key)) {
+      out.stage =
+        type === "custom"
+          ? [...(sec.stage || []), "", "", "", "", "", ""].slice(0, 6).map((x) => String(x || ""))
+          : [];
+    }
+    if (SECTION_INFO[s.key]) out.smallInfo = SECTION_INFO[s.key];
+    if (s.key === "sex") {
+      out.sexType = sec.sexType || "base";
+      out.childFree = Boolean(sec.childFree);
+      out.isChildFree = Boolean(sec.childFree);
+      if (type === "custom") {
+        const a = num(sec.age1);
+        const b = num(sec.age2);
+        if (a) out.age1 = a;
+        if (b) out.age2 = b;
+      }
+    }
+    if (s.key === "body" && type === "custom") {
+      const a = num(sec.height1);
+      const b = num(sec.height2);
+      if (a) out.height1 = a;
+      if (b) out.height2 = b;
+    }
+    body[s.key] = out;
+  });
   return body;
 }
 

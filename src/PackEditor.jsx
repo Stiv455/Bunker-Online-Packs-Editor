@@ -3,6 +3,7 @@ import logo from "./img/defaultPhoto.png";
 import {
   SECTION_INFO,
   SECTIONS,
+  buildFile,
   buildPayload,
   countCards,
   emptyPack,
@@ -46,6 +47,7 @@ export default function PackEditor({ packId, filePack, filePath, offline, onBack
     (async () => {
       if (packId === "new" || packId === "file" || packId === "local") {
         const fresh = packId === "file" && filePack ? packFromServer(filePack) : emptyPack();
+        if (!fresh.title && filePath) fresh.title = fileBase(filePath).replace(/\.json$/i, "");
         if (!stop) {
           setPack(fresh);
           setSnap(JSON.stringify(fresh));
@@ -182,7 +184,7 @@ export default function PackEditor({ packId, filePack, filePath, offline, onBack
   async function saveLocal() {
     setBusy(true);
     try {
-      const text = JSON.stringify(buildPayload(pack), null, 2);
+      const text = JSON.stringify(buildFile(pack), null, 2);
       const name = `${(pack.title || "pack").replace(/[^\wа-яё-]+/gi, "_")}.json`;
       const res = await window.packApi.saveFile(localPath, text, name);
       if (res?.canceled) return;
@@ -197,7 +199,7 @@ export default function PackEditor({ packId, filePack, filePath, offline, onBack
   }
 
   function exportJson() {
-    const blob = new Blob([JSON.stringify(buildPayload(pack), null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(buildFile(pack), null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `${(pack.title || "pack").replace(/[^\wа-яё-]+/gi, "_")}.json`;
