@@ -1,6 +1,6 @@
 {
   "name": "bunker-Online",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "description": "Создание и редактирование личных паков для bunker-online.com",
   "main": "electron/main.mjs",
   "author": "chikda3301",
